@@ -377,6 +377,15 @@
 .fo-ai-result::-webkit-scrollbar,
 .fo-ai-input::-webkit-scrollbar {
   width: 6px;
+  cursor: default;
+}
+
+/* 滚动条区域固定为箭头指针，避免悬停时沿用文本光标影响拖拽 */
+.fo-ai-result::-webkit-scrollbar-track,
+.fo-ai-input::-webkit-scrollbar-track,
+.fo-ai-result::-webkit-scrollbar-thumb,
+.fo-ai-input::-webkit-scrollbar-thumb {
+  cursor: default;
 }
 
 .fo-ai-result::-webkit-scrollbar-thumb,
