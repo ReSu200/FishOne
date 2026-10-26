@@ -55,16 +55,28 @@
   }
 
   function colorWithAlpha(color, alpha) {
+    const rgb = toRgb(color);
+    const a = clamp(typeof alpha === 'number' ? alpha : 1, 0, 1);
+    return 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + a + ')';
+  }
+
+  function toRgb(color) {
     let hex = String(color || '#000000').trim().replace('#', '');
     if (hex.length === 3) {
       hex = hex.split('').map(function (c) { return c + c; }).join('');
     }
     if (!/^[0-9a-f]{6}$/i.test(hex)) hex = '000000';
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    const a = clamp(typeof alpha === 'number' ? alpha : 1, 0, 1);
-    return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + a + ')';
+    return {
+      r: parseInt(hex.slice(0, 2), 16),
+      g: parseInt(hex.slice(2, 4), 16),
+      b: parseInt(hex.slice(4, 6), 16)
+    };
+  }
+
+  function isLightColor(color) {
+    const rgb = toRgb(color);
+    const lum = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+    return lum > 0.55;
   }
 
   function isEditable(target) {
@@ -217,6 +229,14 @@
     host.style.setProperty('--fo-line-height', String(Number(r.lineHeight) || 1.8));
     host.style.setProperty('--fo-border-width', r.border === false ? '0px' : '1px');
 
+    // AI 面板固定用与阅读器明暗相反的实色配色，避免自定义半透明背景导致对比度不足
+    const aiLight = isLightColor(r.bgColor);
+    host.style.setProperty('--fo-ai-bg', aiLight ? '#ffffff' : '#0e1117');
+    host.style.setProperty('--fo-ai-fg', aiLight ? '#1b2027' : '#e9edf1');
+    host.style.setProperty('--fo-ai-line', aiLight ? 'rgba(15, 23, 42, 0.16)' : 'rgba(255, 255, 255, 0.14)');
+    host.style.setProperty('--fo-ai-soft', aiLight ? 'rgba(15, 23, 42, 0.05)' : 'rgba(255, 255, 255, 0.06)');
+    host.style.setProperty('--fo-ai-muted', aiLight ? 'rgba(15, 23, 42, 0.6)' : 'rgba(233, 237, 241, 0.62)');
+
     els.head.querySelector('[data-act="hide"]').setAttribute('title', I.t('hideReader'));
     els.head.querySelector('[data-act="options"]').setAttribute('title', I.t('settings'));
     els.head.querySelector('[data-act="ai"]').setAttribute('title', I.t('ai'));
@@ -235,6 +255,7 @@
     if (!els.aiResult.textContent) {
       els.aiResult.classList.add('fo-placeholder');
     }
+    els.aiResult.setAttribute('data-ph', I.t('aiResultEmpty'));
     updateChrome();
   }
 
@@ -861,9 +882,11 @@
     });
 
     els.fileInput.addEventListener('change', function (event) {
-      const file = event.target.files && event.target.files[0];
+      const input = event.target;
+      const file = input && input.files ? input.files[0] : null;
       importFile(file).finally(function () {
-        event.target.value = '';
+        // 事件对象在异步回调里可能已失效，使用前面保存的元素引用
+        if (input) input.value = '';
       });
     });
 

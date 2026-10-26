@@ -462,9 +462,10 @@
     });
 
     $('file-input').addEventListener('change', function (event) {
-      const file = event.target.files && event.target.files[0];
+      const input = event.target;
+      const file = input && input.files ? input.files[0] : null;
       handleFile(file).finally(function () {
-        event.target.value = '';
+        if (input) input.value = '';
       });
     });
 
