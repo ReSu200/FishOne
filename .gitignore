@@ -22,3 +22,6 @@ Thumbs.db
 .trae-html-share-packages/
 .screenshots/
 tests/tmp/
+
+# 个人收款码（仅本地使用，不纳入版本库）
+assets/sponsor/

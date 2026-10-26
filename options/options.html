@@ -294,45 +294,30 @@
             <div class="qr-slot" data-slot="alipay">
               <div class="qr-frame">
                 <img class="qr-image" id="qr-alipay" alt="">
-                <div class="qr-empty" id="qr-alipay-empty">
+                <div class="qr-empty">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="6" height="6" rx="1"/><rect x="14.5" y="3.5" width="6" height="6" rx="1"/><rect x="3.5" y="14.5" width="6" height="6" rx="1"/><path d="M14.5 14.5h2.2v2.2h-2.2zM19.5 19.5h1M19.5 14.5h1M14.5 19.5h2"/></svg>
-                  <span data-i18n="qrEmpty">尚未放置收款码</span>
+                  <span data-i18n="qrEmpty">FishOne 未放置收款码</span>
                 </div>
               </div>
-              <div class="qr-actions">
-                <span class="qr-label" data-i18n="alipay">支付宝</span>
-                <span class="qr-buttons">
-                  <button class="btn ghost small" type="button" data-qr-upload="alipay" data-i18n="uploadQr">上传收款码</button>
-                  <button class="btn ghost small danger" type="button" data-qr-remove="alipay" data-i18n="removeQr" hidden>删除</button>
-                </span>
-              </div>
+              <span class="qr-label" data-i18n="alipay">支付宝</span>
             </div>
 
             <div class="qr-slot" data-slot="wechat">
               <div class="qr-frame">
                 <img class="qr-image" id="qr-wechat" alt="">
-                <div class="qr-empty" id="qr-wechat-empty">
+                <div class="qr-empty">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="6" height="6" rx="1"/><rect x="14.5" y="3.5" width="6" height="6" rx="1"/><rect x="3.5" y="14.5" width="6" height="6" rx="1"/><path d="M14.5 14.5h2.2v2.2h-2.2zM19.5 19.5h1M19.5 14.5h1M14.5 19.5h2"/></svg>
-                  <span data-i18n="qrEmpty">尚未放置收款码</span>
+                  <span data-i18n="qrEmpty">FishOne 未放置收款码</span>
                 </div>
               </div>
-              <div class="qr-actions">
-                <span class="qr-label" data-i18n="wechat">微信</span>
-                <span class="qr-buttons">
-                  <button class="btn ghost small" type="button" data-qr-upload="wechat" data-i18n="uploadQr">上传收款码</button>
-                  <button class="btn ghost small danger" type="button" data-qr-remove="wechat" data-i18n="removeQr" hidden>删除</button>
-                </span>
-              </div>
+              <span class="qr-label" data-i18n="wechat">微信</span>
             </div>
           </div>
-
-          <p class="field-hint" data-i18n="qrHint"></p>
         </section>
       </div>
     </div>
 
     <input type="file" id="file-input" accept=".txt,text/plain" hidden>
-    <input type="file" id="qr-input" accept="image/*" hidden>
   </div>
 
   <div class="toast" id="toast"></div>
