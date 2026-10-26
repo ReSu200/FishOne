@@ -139,7 +139,9 @@
         bgOpacity: clampNumber($('bgOpacity').value, base.reader.bgOpacity, 0.2, 1),
         blur: Math.round(clampNumber($('blur').value, base.reader.blur, 0, 24)),
         radius: Math.round(clampNumber($('radius').value, base.reader.radius, 0, 32)),
-        border: $('border').checked
+        border: $('border').checked,
+        // AI 分栏宽度由阅读器拖动保存，设置页保存时原样带回
+        aiSplit: clampNumber(base.reader.aiSplit, 45, 30, 65)
       },
       ai: readAiForm(),
       hotkeys: {

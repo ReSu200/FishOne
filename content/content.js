@@ -14,6 +14,7 @@
   const Z_INDEX = '2147483647';
   const MIN_WIDTH = 300;
   const MIN_HEIGHT = 220;
+  const AI_BOOK_LIMIT = 8000;
 
   let settings = null;
   let novel = null;
@@ -29,6 +30,12 @@
 
   let aiPort = null;
   let aiBusy = false;
+  let aiRawText = '';
+  let aiScopeChars = 0;
+  let aiRunScope = 'page';
+  let aiRunCharPos = 0;
+  let aiStartedAt = 0;
+  let aiPromptTimer = null;
 
   const state = {
     visible: false,
@@ -36,7 +43,9 @@
     pageCharCount: 0,
     pageText: '',
     history: [],
-    dirty: false
+    dirty: false,
+    aiScope: 'page',
+    aiSplit: 45
   };
 
   /* ------------------------------ 工具函数 ------------------------------ */
@@ -136,6 +145,7 @@
       '<div class="fo-body">',
       '  <div class="fo-text"></div>',
       '  <div class="fo-measure"></div>',
+      '  <div class="fo-split"></div>',
       '  <div class="fo-empty">',
       '    <div class="fo-empty-icon">' + ICON.book + '</div>',
       '    <div class="fo-empty-title" data-i18n="noNovel"></div>',
@@ -144,19 +154,44 @@
       '  </div>',
       '  <div class="fo-ai">',
       '    <div class="fo-ai-head">',
-      '      <span data-i18n="aiPanelTitle"></span>',
+      '      <div class="fo-ai-tabs">',
+      '        <button class="fo-ai-tab fo-on" data-act="ai-tab" data-tab="summary" data-i18n="aiTabSummary"></button>',
+      '        <button class="fo-ai-tab" data-act="ai-tab" data-tab="history" data-i18n="aiTabHistory"></button>',
+      '      </div>',
       '      <button class="fo-btn" data-act="ai-close" data-i18n-title="close">' + ICON.close + '</button>',
       '    </div>',
-      '    <div class="fo-ai-label"><span data-i18n="aiInputLabel"></span></div>',
-      '    <textarea class="fo-ai-input" data-i18n-placeholder="aiPlaceholder"></textarea>',
-      '    <div class="fo-ai-label">',
-      '      <span data-i18n="aiResultLabel"></span>',
-      '      <button class="fo-btn" data-act="ai-copy" data-i18n="aiCopy"></button>',
+      '    <div class="fo-ai-view fo-ai-view-summary" data-view="summary">',
+      '      <div class="fo-ai-scope">',
+      '        <span class="fo-ai-scope-label" data-i18n="aiScopeLabel"></span>',
+      '        <div class="fo-ai-seg">',
+      '          <button data-act="ai-scope" data-scope="page" data-i18n="aiScopePage"></button>',
+      '          <button data-act="ai-scope" data-scope="recent" data-i18n="aiScopeRecent"></button>',
+      '          <button data-act="ai-scope" data-scope="book" data-i18n="aiScopeBook" data-i18n-title="aiScopeBookHint"></button>',
+      '        </div>',
+      '      </div>',
+      '      <div class="fo-ai-estimate"></div>',
+      '      <div class="fo-ai-label">',
+      '        <span data-i18n="aiResultLabel"></span>',
+      '        <button class="fo-btn" data-act="ai-copy" data-i18n="aiCopy"></button>',
+      '      </div>',
+      '      <div class="fo-ai-result"></div>',
+      '      <div class="fo-ai-meta"></div>',
+      '      <div class="fo-ai-actions">',
+      '        <button class="fo-btn fo-primary" data-act="ai-run"></button>',
+      '        <span class="fo-ai-status"></span>',
+      '      </div>',
+      '      <details class="fo-ai-adv">',
+      '        <summary data-i18n="aiAdvanced"></summary>',
+      '        <textarea class="fo-ai-system" data-i18n-placeholder="systemPromptPlaceholder"></textarea>',
+      '        <div class="fo-ai-adv-hint" data-i18n="aiAdvancedHint"></div>',
+      '      </details>',
       '    </div>',
-      '    <div class="fo-ai-result"></div>',
-      '    <div class="fo-ai-actions">',
-      '      <button class="fo-btn fo-primary" data-act="ai-run" data-i18n="aiRun"></button>',
-      '      <span class="fo-ai-status"></span>',
+      '    <div class="fo-ai-view fo-ai-view-history" data-view="history">',
+      '      <div class="fo-ai-hist-head">',
+      '        <span data-i18n="aiHistoryTitle"></span>',
+      '        <button class="fo-btn" data-act="ai-hist-clear" data-i18n="aiHistoryClear"></button>',
+      '      </div>',
+      '      <div class="fo-ai-hist"></div>',
       '    </div>',
       '  </div>',
       '</div>',
@@ -180,6 +215,7 @@
     els.body = panel.querySelector('.fo-body');
     els.text = panel.querySelector('.fo-text');
     els.measure = panel.querySelector('.fo-measure');
+    els.split = panel.querySelector('.fo-split');
     els.empty = panel.querySelector('.fo-empty');
     els.emptyTitle = panel.querySelector('.fo-empty-title');
     els.emptyHint = panel.querySelector('.fo-empty-hint');
@@ -188,11 +224,18 @@
     els.toast = panel.querySelector('.fo-toast');
     els.fileInput = panel.querySelector('.fo-file');
     els.aiPanel = panel.querySelector('.fo-ai');
-    els.aiInput = panel.querySelector('.fo-ai-input');
+    els.aiTabs = panel.querySelector('.fo-ai-tabs');
+    els.aiSummaryView = panel.querySelector('.fo-ai-view-summary');
+    els.aiHistoryView = panel.querySelector('.fo-ai-view-history');
+    els.aiSeg = panel.querySelector('.fo-ai-seg');
+    els.aiEstimate = panel.querySelector('.fo-ai-estimate');
     els.aiResult = panel.querySelector('.fo-ai-result');
+    els.aiMeta = panel.querySelector('.fo-ai-meta');
     els.aiStatus = panel.querySelector('.fo-ai-status');
     els.aiRun = panel.querySelector('[data-act="ai-run"]');
     els.aiCopy = panel.querySelector('[data-act="ai-copy"]');
+    els.aiSystem = panel.querySelector('.fo-ai-system');
+    els.aiHist = panel.querySelector('.fo-ai-hist');
 
     document.documentElement.appendChild(host);
   }
@@ -214,12 +257,15 @@
     const height = Math.max(MIN_HEIGHT, Math.min(Number(r.height) || 380, vp.height - 20));
     const left = clamp(Number(r.left) || 60, -(width - 120), Math.max(0, vp.width - 120));
     const top = clamp(Number(r.top) || 60, 0, Math.max(0, vp.height - 80));
+    const split = clamp(Number(r.aiSplit) || 45, 30, 65);
+    state.aiSplit = split;
 
     host.style.width = width + 'px';
     host.style.height = height + 'px';
     host.style.left = left + 'px';
     host.style.top = top + 'px';
     host.style.display = state.visible ? 'block' : 'none';
+    host.style.setProperty('--fo-ai-split', split + '%');
 
     host.style.setProperty('--fo-bg', colorWithAlpha(r.bgColor, r.bgOpacity));
     host.style.setProperty('--fo-blur', (Number(r.blur) || 0) + 'px');
@@ -237,10 +283,16 @@
     host.style.setProperty('--fo-ai-soft', aiLight ? 'rgba(15, 23, 42, 0.05)' : 'rgba(255, 255, 255, 0.06)');
     host.style.setProperty('--fo-ai-muted', aiLight ? 'rgba(15, 23, 42, 0.6)' : 'rgba(233, 237, 241, 0.62)');
 
+    // 提示条跟随主题明暗取反色，保证在浅色/深色阅读器上都清晰可读
+    host.style.setProperty('--fo-toast-bg', aiLight ? 'rgba(255, 255, 255, 0.97)' : 'rgba(24, 29, 37, 0.96)');
+    host.style.setProperty('--fo-toast-fg', aiLight ? '#1b2027' : '#e9edf1');
+    host.style.setProperty('--fo-toast-line', aiLight ? 'rgba(15, 23, 42, 0.14)' : 'rgba(255, 255, 255, 0.16)');
+
     els.head.querySelector('[data-act="hide"]').setAttribute('title', I.t('hideReader'));
     els.head.querySelector('[data-act="options"]').setAttribute('title', I.t('settings'));
     els.head.querySelector('[data-act="ai"]').setAttribute('title', I.t('ai'));
     els.fileInput.setAttribute('accept', '.txt,text/plain');
+    updateAiLayout();
   }
 
   function updateStaticText() {
@@ -251,11 +303,11 @@
     const importBtn = els.empty.querySelector('[data-act="import"]');
     if (importBtn) importBtn.textContent = I.t('importNovel');
     els.aiCopy.textContent = I.t('aiCopy');
-    if (!aiBusy) els.aiRun.textContent = I.t('aiRun');
-    if (!els.aiResult.textContent) {
-      els.aiResult.classList.add('fo-placeholder');
-    }
+    if (!aiBusy) els.aiRun.textContent = I.t(aiRawText ? 'aiRerun' : 'aiRun');
+    els.aiResult.classList.toggle('fo-placeholder', !aiRawText);
     els.aiResult.setAttribute('data-ph', I.t('aiResultEmpty'));
+    updateAiEstimate();
+    if (els.aiHistoryView && els.aiHistoryView.classList.contains('fo-on')) renderAiHistory();
     updateChrome();
   }
 
@@ -293,6 +345,7 @@
     syncVisibility();
     persistProgress(true);
     if (els.aiPanel) els.aiPanel.classList.remove('fo-on');
+    updateAiLayout();
     stopAi();
   }
 
@@ -416,6 +469,7 @@
 
     if (options && options.animate) playFade();
     updateChrome();
+    if (els.aiPanel && els.aiPanel.classList.contains('fo-on')) updateAiEstimate();
     scheduleSave();
   }
 
@@ -579,8 +633,10 @@
       const height = clamp(resize.height + event.clientY - resize.y, MIN_HEIGHT, vp.height - rect.top);
       host.style.width = width + 'px';
       host.style.height = height + 'px';
+      updateAiLayout();
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
+        updateAiLayout();
         if (state.visible) render();
       }, 120);
     });
@@ -595,11 +651,67 @@
         /* noop */
       }
       persistRect(undefined, undefined, rect.width, rect.height);
+      updateAiLayout();
       if (state.visible) render();
     }
 
     els.resize.addEventListener('pointerup', finish);
     els.resize.addEventListener('pointercancel', finish);
+  }
+
+  /**
+   * AI 面板宽度拖动（30%~65%），松手后写入 settings.reader.aiSplit
+   */
+  function bindSplit() {
+    let drag = null;
+
+    els.split.addEventListener('pointerdown', function (event) {
+      if (event.button !== 0) return;
+      const rect = els.body.getBoundingClientRect();
+      drag = {
+        x: event.clientX,
+        width: rect.width,
+        pct: clamp(Number(state.aiSplit) || 45, 30, 65)
+      };
+      els.split.classList.add('fo-dragging');
+      try {
+        els.split.setPointerCapture(event.pointerId);
+      } catch (err) {
+        /* noop */
+      }
+      event.preventDefault();
+      event.stopPropagation();
+    });
+
+    els.split.addEventListener('pointermove', function (event) {
+      if (!drag || !drag.width) return;
+      const pct = clamp(drag.pct - ((event.clientX - drag.x) / drag.width) * 100, 30, 65);
+      state.aiSplit = pct;
+      host.style.setProperty('--fo-ai-split', pct.toFixed(1) + '%');
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        if (state.visible) render();
+      }, 100);
+    });
+
+    function finish(event) {
+      if (!drag) return;
+      drag = null;
+      els.split.classList.remove('fo-dragging');
+      try {
+        els.split.releasePointerCapture(event.pointerId);
+      } catch (err) {
+        /* noop */
+      }
+      const pct = Math.round(clamp(state.aiSplit || 45, 30, 65));
+      S.patchSettings({ 'reader.aiSplit': pct }).catch(function () {
+        /* noop */
+      });
+      if (state.visible) render();
+    }
+
+    els.split.addEventListener('pointerup', finish);
+    els.split.addEventListener('pointercancel', finish);
   }
 
   /* ------------------------------ 键盘 / 滚轮 ------------------------------ */
@@ -674,6 +786,11 @@
 
   function onWheel(event) {
     if (!state.visible) return;
+    // AI 面板内滚动查看结果时不应触发翻页
+    const path = event.composedPath ? event.composedPath() : [];
+    for (let i = 0; i < path.length; i += 1) {
+      if (path[i] === els.aiPanel) return;
+    }
     event.preventDefault();
     event.stopPropagation();
     const delta = Math.abs(event.deltaY) > Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
@@ -687,9 +804,83 @@
 
   /* ------------------------------ AI 总结 ------------------------------ */
 
-  function resetAiResult() {
-    els.aiResult.textContent = '';
-    els.aiResult.classList.add('fo-placeholder');
+  function escapeHtml(text) {
+    return String(text || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function inlineMarkup(text) {
+    return escapeHtml(text).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  }
+
+  /**
+   * 轻量 Markdown 渲染：标题 / 有序无序列表 / 加粗 / 分段
+   * 只接受纯文本输入，先转义再拼接标签，避免结果里的 HTML 被直接执行
+   */
+  function renderMarkdown(text) {
+    const lines = String(text || '').replace(/\r\n/g, '\n').split('\n');
+    const out = [];
+    let list = null;
+    let para = [];
+
+    function flushPara() {
+      if (!para.length) return;
+      out.push('<p>' + inlineMarkup(para.join(' ')) + '</p>');
+      para = [];
+    }
+
+    function flushList() {
+      if (!list) return;
+      out.push('<' + list.type + '>' + list.items.map(function (item) {
+        return '<li>' + inlineMarkup(item) + '</li>';
+      }).join('') + '</' + list.type + '>');
+      list = null;
+    }
+
+    lines.forEach(function (raw) {
+      const line = raw.trim();
+      if (!line) {
+        flushPara();
+        flushList();
+        return;
+      }
+      let match = line.match(/^(#{1,4})\s+(.*)$/);
+      if (match) {
+        flushPara();
+        flushList();
+        const tag = match[1].length <= 2 ? 'h3' : 'h4';
+        out.push('<' + tag + '>' + inlineMarkup(match[2]) + '</' + tag + '>');
+        return;
+      }
+      match = line.match(/^[-*·•]\s+(.*)$/);
+      if (match) {
+        flushPara();
+        if (!list || list.type !== 'ul') {
+          flushList();
+          list = { type: 'ul', items: [] };
+        }
+        list.items.push(match[1]);
+        return;
+      }
+      match = line.match(/^\d+[.、)]\s*(.*)$/);
+      if (match) {
+        flushPara();
+        if (!list || list.type !== 'ol') {
+          flushList();
+          list = { type: 'ol', items: [] };
+        }
+        list.items.push(match[1]);
+        return;
+      }
+      flushList();
+      para.push(line);
+    });
+
+    flushPara();
+    flushList();
+    return out.join('');
   }
 
   function setAiStatus(text, isError) {
@@ -697,23 +888,114 @@
     els.aiStatus.classList.toggle('fo-error', !!isError);
   }
 
+  function resetAiResult() {
+    aiRawText = '';
+    els.aiResult.innerHTML = '';
+    els.aiResult.classList.add('fo-placeholder');
+    els.aiMeta.textContent = '';
+    els.aiResult.scrollTop = 0;
+  }
+
+  function estimateTokensByChars(chars) {
+    return Math.ceil(Number(chars || 0) / 1.5);
+  }
+
+  function scopeLabel(scope) {
+    if (scope === 'recent') return I.t('aiScopeRecent');
+    if (scope === 'book') return I.t('aiScopeBook');
+    return I.t('aiScopePage');
+  }
+
+  /**
+   * 按范围取待总结文本：本页、最近三页（近似）、整本前 8,000 字
+   */
+  function aiScopeText(scope) {
+    if (!novel || !novel.text) return '';
+    const text = novel.text;
+    if (scope === 'book') return text.slice(0, AI_BOOK_LIMIT);
+    const span = Math.max(1, state.pageCharCount || 600);
+    if (scope === 'recent') {
+      const start = Math.max(0, state.charPos - span * 2);
+      const end = Math.min(text.length, state.charPos + span);
+      return text.slice(start, Math.max(end, start + 1));
+    }
+    return state.pageText || text.slice(state.charPos, state.charPos + span);
+  }
+
+  function updateAiEstimate() {
+    if (!els.aiEstimate) return;
+    const text = aiScopeText(state.aiScope);
+    els.aiEstimate.textContent = I.t('aiEstimate', {
+      chars: numberText(text.length),
+      tokens: numberText(estimateTokensByChars(text.length))
+    });
+  }
+
+  function setAiScope(scope) {
+    state.aiScope = scope === 'recent' || scope === 'book' ? scope : 'page';
+    if (els.aiSeg) {
+      els.aiSeg.querySelectorAll('[data-scope]').forEach(function (btn) {
+        btn.classList.toggle('fo-on', btn.getAttribute('data-scope') === state.aiScope);
+      });
+    }
+    updateAiEstimate();
+  }
+
+  /**
+   * 根据阅读器宽度决定 AI 面板是右侧分栏还是覆盖模式
+   */
+  function updateAiLayout() {
+    if (!host || !els.body) return;
+    const width = host.clientWidth || (settings ? Number(settings.reader.width) || 0 : 0);
+    const overlay = width > 0 && width < 560;
+    els.body.classList.toggle('fo-ai-overlay', overlay);
+    els.body.classList.toggle('fo-ai-on', els.aiPanel.classList.contains('fo-on'));
+  }
+
+  // 布局变化（分栏开关、拖动分隔条）后需要重新分页，charPos 保持不变
+  function refitSoon() {
+    if (!state.visible) return Promise.resolve();
+    return nextFrame().then(function () {
+      if (state.visible) render();
+    });
+  }
+
   function openAiPanel() {
     if (!novel) {
       showToast(I.t('noNovel'));
       return;
     }
+    if (els.aiPanel.classList.contains('fo-on')) return;
     els.aiPanel.classList.add('fo-on');
-    if (!els.aiInput.value.trim()) {
-      els.aiInput.value = state.pageText || '';
-    }
+    updateAiLayout();
+    els.aiSystem.value = (settings.ai && settings.ai.systemPrompt) || '';
+    setAiScope(state.aiScope);
+    switchAiTab('summary');
     els.aiResult.scrollTop = 0;
     setAiStatus('');
-    updateStaticText();
+    // 先按分栏后的宽度重新分页，保证「本页」统计与屏幕上看到的一致；随后直接开始总结
+    refitSoon().then(function () {
+      if (els.aiPanel.classList.contains('fo-on')) startAi();
+    });
   }
 
   function closeAiPanel() {
     stopAi();
     els.aiPanel.classList.remove('fo-on');
+    updateAiLayout();
+    refitSoon();
+  }
+
+  function switchAiTab(tab) {
+    const history = tab === 'history';
+    if (els.aiTabs) {
+      els.aiTabs.querySelectorAll('[data-tab]').forEach(function (btn) {
+        btn.classList.toggle('fo-on', btn.getAttribute('data-tab') === tab);
+      });
+    }
+    els.aiSummaryView.classList.toggle('fo-on', !history);
+    els.aiHistoryView.classList.toggle('fo-on', history);
+    if (history) renderAiHistory();
   }
 
   function stopAi() {
@@ -726,7 +1008,7 @@
     disconnectAi();
     aiBusy = false;
     els.aiRun.disabled = false;
-    els.aiRun.textContent = I.t('aiRun');
+    els.aiRun.textContent = I.t(aiRawText ? 'aiRerun' : 'aiRun');
     setAiStatus('');
   }
 
@@ -743,11 +1025,9 @@
   function handleAiMessage(message) {
     if (!message || !message.type) return;
     if (message.type === 'delta') {
-      if (els.aiResult.classList.contains('fo-placeholder')) {
-        els.aiResult.classList.remove('fo-placeholder');
-        els.aiResult.textContent = '';
-      }
-      els.aiResult.textContent += message.text || '';
+      aiRawText += message.text || '';
+      els.aiResult.classList.remove('fo-placeholder');
+      els.aiResult.innerHTML = renderMarkdown(aiRawText);
       els.aiResult.scrollTop = els.aiResult.scrollHeight;
       return;
     }
@@ -760,12 +1040,17 @@
       }
       return;
     }
-    if (message.type === 'done' || message.type === 'aborted') {
+    if (message.type === 'done') {
       finishAi();
-      if (message.type === 'aborted' && !els.aiResult.textContent) {
-        els.aiResult.textContent = '';
-        els.aiResult.classList.add('fo-placeholder');
-      }
+      if (message.text && !aiRawText) aiRawText = message.text;
+      els.aiResult.innerHTML = renderMarkdown(aiRawText);
+      updateAiMeta(message.usage);
+      saveAiHistory(message.usage);
+      return;
+    }
+    if (message.type === 'aborted') {
+      finishAi();
+      if (!aiRawText) resetAiResult();
     }
   }
 
@@ -773,26 +1058,64 @@
     disconnectAi();
     aiBusy = false;
     els.aiRun.disabled = false;
-    els.aiRun.textContent = I.t('aiRun');
-    if (els.aiResult.textContent) els.aiResult.classList.remove('fo-placeholder');
+    els.aiRun.textContent = I.t(aiRawText ? 'aiRerun' : 'aiRun');
+    els.aiResult.classList.toggle('fo-placeholder', !aiRawText);
     if (els.aiStatus.classList.contains('fo-error')) return;
     setAiStatus('');
   }
 
-  function runAi() {
-    if (aiBusy) {
-      stopAi();
+  function updateAiMeta(usage) {
+    if (!aiRawText) return;
+    const approx = usage && !usage.estimated ? '' : '~';
+    const tokens = usage && usage.total
+      ? usage.total
+      : estimateTokensByChars(aiScopeChars) + estimateTokensByChars(aiRawText.length);
+    const sec = aiStartedAt ? ((Date.now() - aiStartedAt) / 1000).toFixed(1) : '0.0';
+    els.aiMeta.textContent = I.t('aiMetaLine', {
+      scope: scopeLabel(aiRunScope),
+      chars: numberText(aiScopeChars),
+      sec: sec,
+      tokens: approx + numberText(tokens)
+    });
+  }
+
+  function saveAiHistory(usage) {
+    if (!aiRawText || !novel) return;
+    const tokens = usage && usage.total
+      ? usage.total
+      : estimateTokensByChars(aiScopeChars) + estimateTokensByChars(aiRawText.length);
+    S.addAiHistory({
+      scope: aiRunScope,
+      chars: aiScopeChars,
+      charPos: aiRunCharPos,
+      novelId: novel.id,
+      tokens: tokens,
+      text: aiRawText
+    }).then(function () {
+      if (els.aiHistoryView.classList.contains('fo-on')) renderAiHistory();
+    }).catch(function () {
+      /* noop */
+    });
+  }
+
+  function startAi() {
+    if (aiBusy) return;
+    if (!settings.ai || !settings.ai.apiKey) {
+      setAiStatus(I.t('aiNoKey'), true);
       return;
     }
-    const text = els.aiInput.value.trim();
-    if (!text) return;
-    if (!settings.ai.apiKey) {
-      setAiStatus(I.t('aiNoKey'), true);
+    const text = aiScopeText(state.aiScope).trim();
+    if (!text) {
+      setAiStatus(I.t('aiNeedText'), true);
       return;
     }
 
     resetAiResult();
     aiBusy = true;
+    aiScopeChars = text.length;
+    aiRunScope = state.aiScope;
+    aiRunCharPos = state.charPos;
+    aiStartedAt = Date.now();
     els.aiRun.disabled = false;
     els.aiRun.textContent = I.t('aiStop');
     setAiStatus(I.t('aiThinking'));
@@ -804,7 +1127,7 @@
       if (aiBusy) {
         aiBusy = false;
         els.aiRun.disabled = false;
-        els.aiRun.textContent = I.t('aiRun');
+        els.aiRun.textContent = I.t(aiRawText ? 'aiRerun' : 'aiRun');
         if (err) setAiStatus(I.t('aiError', { msg: err.message }), true);
       }
       aiPort = null;
@@ -819,7 +1142,7 @@
   }
 
   function copyAiResult() {
-    const text = els.aiResult.textContent || '';
+    const text = aiRawText || els.aiResult.textContent || '';
     if (!text) return;
     const done = function () {
       showToast(I.t('copied'));
@@ -832,6 +1155,98 @@
       /* noop */
     }
   }
+
+  async function renderAiHistory() {
+    if (!els.aiHist) return;
+    const list = await S.getAiHistory();
+    els.aiHist.textContent = '';
+    if (!list.length) {
+      const empty = document.createElement('div');
+      empty.className = 'fo-ai-hist-empty';
+      empty.textContent = I.t('aiHistoryEmpty');
+      els.aiHist.appendChild(empty);
+      return;
+    }
+
+    list.forEach(function (item) {
+      const card = document.createElement('div');
+      card.className = 'fo-ai-hist-item';
+
+      const meta = document.createElement('div');
+      meta.className = 'fo-ai-hist-meta';
+      const time = document.createElement('span');
+      time.textContent = new Date(item.at || Date.now()).toLocaleString(I.lang === 'en' ? 'en-US' : 'zh-CN');
+      const brief = document.createElement('span');
+      brief.textContent = I.t('aiHistoryMeta', {
+        scope: scopeLabel(item.scope),
+        chars: numberText(item.chars || 0),
+        tokens: numberText(item.tokens || 0)
+      });
+      meta.appendChild(time);
+      meta.appendChild(brief);
+
+      const body = document.createElement('div');
+      body.className = 'fo-ai-hist-text';
+      body.innerHTML = renderMarkdown(item.text || '');
+
+      const acts = document.createElement('div');
+      acts.className = 'fo-ai-hist-acts';
+      const jump = document.createElement('button');
+      jump.className = 'fo-btn';
+      jump.setAttribute('data-act', 'ai-hist-jump');
+      jump.setAttribute('data-id', item.id);
+      jump.textContent = I.t('aiHistoryJump');
+      const remove = document.createElement('button');
+      remove.className = 'fo-btn';
+      remove.setAttribute('data-act', 'ai-hist-del');
+      remove.setAttribute('data-id', item.id);
+      remove.textContent = I.t('aiHistoryDelete');
+      acts.appendChild(jump);
+      acts.appendChild(remove);
+
+      card.appendChild(meta);
+      card.appendChild(body);
+      card.appendChild(acts);
+      els.aiHist.appendChild(card);
+    });
+  }
+
+  async function jumpToAiHistory(id) {
+    const list = await S.getAiHistory();
+    const item = list.filter(function (entry) { return entry.id === id; })[0];
+    if (!item || !novel) return;
+    if (item.novelId && novel.id && item.novelId !== novel.id) {
+      showToast(I.t('aiHistoryMismatch'));
+      return;
+    }
+    state.charPos = clamp(Number(item.charPos) || 0, 0, Math.max(0, novel.text.length - 1));
+    state.history = [];
+    render({ animate: true });
+    showToast(I.t('aiHistoryJumped'));
+  }
+
+  async function deleteAiHistory(id) {
+    await S.removeAiHistory(id);
+    renderAiHistory();
+  }
+
+  async function clearAiHistory() {
+    if (!window.confirm(I.t('aiHistoryClearConfirm'))) return;
+    await S.clearAiHistory();
+    renderAiHistory();
+    showToast(I.t('aiHistoryCleared'));
+  }
+
+  function onSystemPromptInput() {
+    clearTimeout(aiPromptTimer);
+    const value = els.aiSystem.value;
+    aiPromptTimer = setTimeout(function () {
+      S.patchSettings({ 'ai.systemPrompt': value }).catch(function () {
+        /* noop */
+      });
+    }, 400);
+  }
+
 
   /* ------------------------------ 小说导入 ------------------------------ */
 
@@ -874,7 +1289,14 @@
         }
       } else if (act === 'ai') openAiPanel();
       else if (act === 'ai-close') closeAiPanel();
-      else if (act === 'ai-run') runAi();
+      else if (act === 'ai-run') {
+        if (aiBusy) stopAi();
+        else startAi();
+      } else if (act === 'ai-scope') setAiScope(btn.getAttribute('data-scope'));
+      else if (act === 'ai-tab') switchAiTab(btn.getAttribute('data-tab'));
+      else if (act === 'ai-hist-jump') jumpToAiHistory(btn.getAttribute('data-id'));
+      else if (act === 'ai-hist-del') deleteAiHistory(btn.getAttribute('data-id'));
+      else if (act === 'ai-hist-clear') clearAiHistory();
       else if (act === 'ai-copy') copyAiResult();
       else if (act === 'prev') prevPage();
       else if (act === 'next') nextPage();
@@ -890,6 +1312,8 @@
       });
     });
 
+    els.aiSystem.addEventListener('input', onSystemPromptInput);
+
     els.body.addEventListener('wheel', onWheel, { passive: false });
     els.panel.addEventListener('contextmenu', function (event) {
       event.stopPropagation();
@@ -897,6 +1321,7 @@
 
     bindDrag();
     bindResize();
+    bindSplit();
   }
 
   function bindGlobalEvents() {

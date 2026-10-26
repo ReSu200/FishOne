@@ -19,17 +19,24 @@ async function recordUsage(messages, resultText, usage) {
     await FishStore.addUsage(usage);
     return;
   }
+  await FishStore.addUsage(estimateUsage(messages, resultText));
+}
+
+/**
+ * 服务未返回 usage 时按字符估算，estimated 供界面区分「约」
+ */
+function estimateUsage(messages, resultText) {
   const promptText = (messages || []).map(function (item) {
     return item && item.content ? item.content : '';
   }).join('\n');
   const prompt = estimateTokens(promptText);
   const completion = estimateTokens(resultText);
-  await FishStore.addUsage({
+  return {
     prompt: prompt,
     completion: completion,
     total: prompt + completion,
     estimated: true
-  });
+  };
 }
 
 async function readSettings() {
@@ -102,7 +109,8 @@ chrome.runtime.onConnect.addListener(function (port) {
           }
         });
         if (!controller.signal.aborted) {
-          safePost(port, { type: 'done', text: result });
+          const finalUsage = reportedUsage || estimateUsage(messages, result);
+          safePost(port, { type: 'done', text: result, usage: finalUsage });
           recordUsage(messages, result, reportedUsage).catch(function () {
             /* 统计失败不影响阅读体验 */
           });
