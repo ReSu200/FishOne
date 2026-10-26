@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FishOne</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M4 16c0-4 4.6-7 9.4-7 3 0 5.6 1 7.4 2.6l5-2.6-1.4 4.2 1.4 4.1-5-2.6C18.8 18 16.2 19 13.2 19 8.4 19 4 18 4 16z"/>
+            <circle cx="10.2" cy="14.6" r="1.35"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 data-i18n="optionsTitle">设置</h1>
+          <p data-i18n="optionsSubtitle">配置属于你的摸鱼阅读体验</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <label class="lang-select">
+          <span data-i18n="language">语言</span>
+          <select id="language">
+            <option value="auto" data-i18n="langAuto">跟随浏览器</option>
+            <option value="zh_CN" data-i18n="langZh">中文</option>
+            <option value="en" data-i18n="langEn">English</option>
+          </select>
+        </label>
+        <button class="btn ghost" id="reset" type="button" data-i18n="reset">恢复默认</button>
+        <button class="btn primary" id="save" type="button" data-i18n="save">保存设置</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <div class="card-title">
+          <h2 data-i18n="secDisplay">显示与尺寸</h2>
+          <p data-i18n="secDisplayDesc">阅读器悬浮在网页上的位置与大小</p>
+        </div>
+        <div class="grid">
+          <label class="field">
+            <span class="field-label" data-i18n="left">左侧距离 (px)</span>
+            <input class="input" id="left" type="number" min="0" max="4000" step="1">
+          </label>
+          <label class="field">
+            <span class="field-label" data-i18n="top">顶部距离 (px)</span>
+            <input class="input" id="top" type="number" min="0" max="3000" step="1">
+          </label>
+          <label class="field">
+            <span class="field-label" data-i18n="width">宽度 (px)</span>
+            <input class="input" id="width" type="number" min="300" max="2400" step="10">
+          </label>
+          <label class="field">
+            <span class="field-label" data-i18n="height">高度 (px)</span>
+            <input class="input" id="height" type="number" min="220" max="1600" step="10">
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <h2 data-i18n="secStyle">外观</h2>
+          <p data-i18n="secStyleDesc">背景、文字与圆角，越低调越安全</p>
+        </div>
+        <div class="grid">
+          <label class="field">
+            <span class="field-label" data-i18n="fontSize">字号 (px)</span>
+            <input class="input" id="fontSize" type="number" min="11" max="32" step="1">
+          </label>
+          <label class="field">
+            <span class="field-label" data-i18n="lineHeight">行高倍数</span>
+            <input class="input" id="lineHeight" type="number" min="1.2" max="2.6" step="0.05">
+          </label>
+
+          <div class="field">
+            <span class="field-label" data-i18n="textColor">文字颜色</span>
+            <div class="color-row">
+              <input type="color" id="textColor">
+              <span class="hex" id="textColor-hex">#e9edf1</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label" data-i18n="bgColor">背景颜色</span>
+            <div class="color-row">
+              <input type="color" id="bgColor">
+              <span class="hex" id="bgColor-hex">#0e1116</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label" data-i18n="bgOpacity">背景不透明度</span>
+            <div class="range-row">
+              <input type="range" id="bgOpacity" min="0.25" max="1" step="0.01">
+              <span class="value" id="bgOpacity-val">90%</span>
+            </div>
+            <span class="field-hint" data-i18n="bgOpacityHint">数值越低越透明，越不容易被发现</span>
+          </div>
+
+          <div class="field">
+            <span class="field-label" data-i18n="blur">背景模糊 (px)</span>
+            <div class="range-row">
+              <input type="range" id="blur" min="0" max="24" step="1">
+              <span class="value" id="blur-val">10px</span>
+            </div>
+            <span class="field-hint" data-i18n="blurHint">毛玻璃效果，与透明度配合使用</span>
+          </div>
+
+          <label class="field">
+            <span class="field-label" data-i18n="radius">圆角 (px)</span>
+            <input class="input" id="radius" type="number" min="0" max="32" step="1">
+          </label>
+
+          <label class="field checkbox">
+            <input type="checkbox" id="border">
+            <span data-i18n="border">显示边框</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <h2 data-i18n="secAi">AI 模型</h2>
+          <p data-i18n="secAiDesc">兼容 OpenAI 协议的任意服务，密钥仅保存在本地浏览器</p>
+        </div>
+        <div class="grid">
+          <div class="field span-2">
+            <span class="field-label" data-i18n="apiKey">API Key</span>
+            <div class="secret-row">
+              <input class="input" id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-...">
+              <button class="btn ghost small" id="toggle-key" type="button">显示</button>
+            </div>
+          </div>
+          <label class="field span-2">
+            <span class="field-label" data-i18n="baseUrl">Base URL</span>
+            <input class="input" id="baseUrl" type="text" spellcheck="false" placeholder="https://api.deepseek.com">
+          </label>
+          <label class="field span-2">
+            <span class="field-label" data-i18n="model">模型</span>
+            <input class="input" id="model" type="text" spellcheck="false" placeholder="deepseek-chat">
+          </label>
+
+          <div class="field">
+            <span class="field-label" data-i18n="temperature">Temperature</span>
+            <div class="range-row">
+              <input type="range" id="temperature" min="0" max="1.5" step="0.1">
+              <span class="value" id="temperature-val">0.7</span>
+            </div>
+          </div>
+
+          <label class="field">
+            <span class="field-label" data-i18n="maxTokens">最大输出 Tokens</span>
+            <input class="input" id="maxTokens" type="number" min="128" max="8192" step="64">
+          </label>
+
+          <label class="field span-2">
+            <span class="field-label" data-i18n="systemPrompt">系统提示词（可选）</span>
+            <textarea class="input textarea" id="systemPrompt" rows="3" data-i18n-placeholder="systemPromptPlaceholder"></textarea>
+          </label>
+        </div>
+        <div class="card-foot">
+          <button class="btn ghost" id="test-ai" type="button" data-i18n="testAi">测试连接</button>
+          <span class="status" id="test-status"></span>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <h2 data-i18n="secHotkey">快捷键</h2>
+          <p data-i18n="secHotkeyDesc">一键隐藏阅读器，领导走过也不慌</p>
+        </div>
+        <div class="grid">
+          <label class="field">
+            <span class="field-label" data-i18n="hotkeyLabel">隐藏 / 显示快捷键</span>
+            <input class="input hotkey" id="hotkey" type="text" readonly data-i18n-placeholder="hotkeyPlaceholder">
+            <span class="field-hint" data-i18n="hotkeyHint"></span>
+          </label>
+          <div class="field">
+            <span class="field-label" data-i18n="hotkeyBrowser">浏览器级快捷键</span>
+            <div class="inline-row">
+              <code class="kbd" data-i18n="hotkeyBrowserValue">Ctrl + Shift + F（默认）</code>
+              <button class="btn ghost small" id="open-shortcuts" type="button" data-i18n="openShortcutPage">打开浏览器快捷键设置</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <h2 data-i18n="secGeneral">通用</h2>
+          <p data-i18n="secGeneralDesc">语言与数据管理</p>
+        </div>
+        <div class="grid">
+          <div class="field span-2">
+            <span class="field-label" data-i18n="novel">小说</span>
+            <div class="novel-row">
+              <span class="novel-info" id="novel-info">—</span>
+              <button class="btn ghost small" id="import-novel" type="button" data-i18n="importNovel">导入小说</button>
+              <button class="btn ghost small danger" id="clear-novel" type="button" data-i18n="clearNovel">清除小说</button>
+            </div>
+            <span class="field-hint" data-i18n="generalHint">所有设置保存在浏览器本地，不会上传。</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <input type="file" id="file-input" accept=".txt,text/plain" hidden>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="../lib/i18n.js"></script>
+  <script src="../lib/storage.js"></script>
+  <script src="../lib/novel.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FishOne</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="app-head">
+    <div class="logo">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M4 16c0-4 4.6-7 9.4-7 3 0 5.6 1 7.4 2.6l5-2.6-1.4 4.2 1.4 4.1-5-2.6C18.8 18 16.2 19 13.2 19 8.4 19 4 18 4 16z"/>
+        <circle cx="10.2" cy="14.6" r="1.35" class="logo-eye"/>
+      </svg>
+    </div>
+    <div class="app-title">
+      <h1 data-i18n="appName">摸鱼一号</h1>
+      <p data-i18n="appTagline">安全摸鱼，安静看书</p>
+    </div>
+    <button class="icon-btn" id="btn-options" data-i18n-title="openSettings" type="button">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+    </button>
+  </header>
+
+  <section class="card">
+    <div class="card-head">
+      <span class="label" data-i18n="novel">小说</span>
+      <span class="badge" id="novel-badge">&mdash;</span>
+    </div>
+    <div class="novel-name" id="novel-name">尚未导入小说</div>
+    <div class="progress"><i id="progress-bar"></i></div>
+    <div class="meta" id="novel-meta"></div>
+    <input type="file" id="file-input" accept=".txt,text/plain" hidden>
+    <button class="btn primary block" id="btn-import" type="button" data-i18n="importNovel">导入小说</button>
+  </section>
+
+  <section class="card actions">
+    <button class="btn primary block" id="btn-toggle" type="button" data-i18n="showReader">显示阅读器</button>
+    <div class="row">
+      <button class="btn" id="btn-prev" type="button" data-i18n="prevPage">上一页</button>
+      <button class="btn" id="btn-next" type="button" data-i18n="nextPage">下一页</button>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span class="hint" id="hint"></span>
+    <button class="link" id="btn-settings" type="button" data-i18n="openOptions">设置</button>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+  <script src="../lib/i18n.js"></script>
+  <script src="../lib/storage.js"></script>
+  <script src="../lib/novel.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

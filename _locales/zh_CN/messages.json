@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "摸鱼一号 FishOne",
+    "description": "扩展名称"
+  },
+  "extShortName": {
+    "message": "摸鱼一号",
+    "description": "扩展短名称"
+  },
+  "extDescription": {
+    "message": "上班摸鱼看小说的安全阅读器：导入 txt、自定义悬浮阅读区域、滚轮与方向键翻页、快捷键一键隐藏，并支持 AI 总结。",
+    "description": "扩展描述"
+  },
+  "cmdToggle": {
+    "message": "显示 / 隐藏阅读器",
+    "description": "浏览器级快捷键说明"
+  }
+}

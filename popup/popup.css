@@ -1,0 +1,320 @@
+:root {
+  --bg: #0b0e13;
+  --card: #141922;
+  --card-border: rgba(255, 255, 255, 0.07);
+  --text: #e9edf1;
+  --muted: rgba(233, 237, 241, 0.48);
+  --accent: #5eead4;
+  --accent-ink: #06231f;
+  --danger: #fca5a5;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 340px;
+}
+
+body {
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(94, 234, 212, 0.12), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 13px;
+  padding: 14px 14px 12px;
+  user-select: none;
+}
+
+/* 顶部 */
+.app-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.logo {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  background: linear-gradient(140deg, rgba(94, 234, 212, 0.95), rgba(45, 212, 191, 0.55));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(94, 234, 212, 0.22);
+}
+
+.logo svg {
+  width: 24px;
+  height: 24px;
+  fill: #04211d;
+}
+
+.logo .logo-eye {
+  fill: #04211d;
+}
+
+.app-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.app-title h1 {
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-title p {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icon-btn {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.75;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.11);
+  opacity: 1;
+}
+
+.icon-btn svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 卡片 */
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.label {
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.badge {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(94, 234, 212, 0.12);
+  color: var(--accent);
+}
+
+.novel-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.novel-name.empty {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.progress {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.progress > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(94, 234, 212, 0.65), var(--accent));
+  transition: width 0.25s ease;
+}
+
+.meta {
+  margin-top: 7px;
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  min-height: 14px;
+}
+
+.meta .pct {
+  color: var(--accent);
+  margin-right: 6px;
+}
+
+/* 按钮 */
+.btn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  height: 34px;
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.btn.primary:hover {
+  background: #7df0dd;
+}
+
+.btn.block {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+
+.actions {
+  padding: 12px;
+}
+
+.actions .row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.actions .row .btn {
+  flex: 1 1 0;
+}
+
+/* 底部 */
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 4px 0;
+}
+
+.hint {
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hint.error {
+  color: var(--danger);
+}
+
+.link {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  opacity: 0.9;
+}
+
+.link:hover {
+  background: rgba(94, 234, 212, 0.1);
+  opacity: 1;
+}
+
+/* 提示 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%) translateY(8px);
+  max-width: 290px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(6, 9, 13, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11.5px;
+  line-height: 1.5;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast.on {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

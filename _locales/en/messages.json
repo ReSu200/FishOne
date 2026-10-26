@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "FishOne",
+    "description": "Extension name"
+  },
+  "extShortName": {
+    "message": "FishOne",
+    "description": "Extension short name"
+  },
+  "extDescription": {
+    "message": "A safe floating novel reader for work: import .txt novels, customize the floating panel, turn pages with wheel or arrow keys, hide instantly with a shortcut, and summarize with AI.",
+    "description": "Extension description"
+  },
+  "cmdToggle": {
+    "message": "Show / hide the reader",
+    "description": "Browser level shortcut description"
+  }
+}
