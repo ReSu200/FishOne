@@ -65,7 +65,7 @@ body {
 }
 
 .page {
-  max-width: 880px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 0 24px 56px;
 }
@@ -205,20 +205,104 @@ select:focus {
   border-color: var(--accent);
 }
 
-/* ---------- 主体 ---------- */
-main {
+/* ---------- 主体：左侧导航 + 右侧面板 ---------- */
+.layout {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 24px;
   padding-top: 20px;
 }
 
-.card {
+.side-nav {
+  position: sticky;
+  top: 86px;
+  flex: 0 0 196px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.nav-item {
+  position: relative;
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-item svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nav-item span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-item:hover {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 650;
+}
+
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.panels {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.panel {
+  display: none;
   background: linear-gradient(180deg, var(--card-glow), transparent), var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 20px 20px 18px;
+  padding: 20px 22px 18px;
   transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.panel.active {
+  display: block;
 }
 
 .card-title {
@@ -603,6 +687,35 @@ input[type="range"]::-webkit-slider-thumb {
   .topbar {
     flex-wrap: wrap;
     row-gap: 12px;
+  }
+
+  .layout {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding-top: 14px;
+  }
+
+  .side-nav {
+    position: static;
+    width: 100%;
+    flex: 0 0 auto;
+    flex-direction: row;
+    gap: 4px;
+    padding: 5px;
+    overflow-x: auto;
+  }
+
+  .nav-item {
+    width: auto;
+    height: 34px;
+    flex: 0 0 auto;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .nav-item.active::before {
+    display: none;
   }
 
   .grid {

@@ -298,9 +298,28 @@
     }
   }
 
+  /* ------------------------------ 面板切换 ------------------------------ */
+
+  function switchPanel(name) {
+    document.querySelectorAll('.nav-item').forEach(function (item) {
+      const on = item.getAttribute('data-panel') === name;
+      item.classList.toggle('active', on);
+      item.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.querySelectorAll('.panel').forEach(function (panel) {
+      panel.classList.toggle('active', panel.id === 'panel-' + name);
+    });
+  }
+
   /* ------------------------------ 事件绑定 ------------------------------ */
 
   function bind() {
+    document.querySelectorAll('.nav-item').forEach(function (item) {
+      item.addEventListener('click', function () {
+        switchPanel(item.getAttribute('data-panel'));
+      });
+    });
+
     $('save').addEventListener('click', function () {
       save().catch(function (err) {
         toast(String(err && err.message ? err.message : err));
