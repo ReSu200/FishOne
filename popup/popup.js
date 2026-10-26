@@ -200,6 +200,7 @@
   async function init() {
     settings = await S.getSettings();
     I.setLang(settings.language);
+    document.documentElement.setAttribute('data-theme', settings.theme === 'light' ? 'light' : 'dark');
     I.applyDom(document);
     novel = await S.getNovel();
 

@@ -51,6 +51,25 @@
     btn.textContent = $('apiKey').type === 'password' ? I.t('showKey') : I.t('hideKey');
   }
 
+  /* ------------------------------ 主题 ------------------------------ */
+
+  function applyTheme(theme) {
+    const next = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    $('theme-light').classList.toggle('active', next === 'light');
+    $('theme-dark').classList.toggle('active', next === 'dark');
+    return next;
+  }
+
+  async function setTheme(theme) {
+    const next = applyTheme(theme);
+    try {
+      settings = await S.patchSettings({ theme: next });
+    } catch (err) {
+      /* noop */
+    }
+  }
+
   /* ------------------------------ 表单读写 ------------------------------ */
 
   function fillForm(data) {
@@ -81,6 +100,7 @@
     $('hotkey').value = data.hotkeys && data.hotkeys.toggle ? data.hotkeys.toggle : '';
     $('language').value = data.language || 'auto';
 
+    applyTheme(data.theme);
     syncDecorations();
     syncKeyButton();
   }
@@ -125,7 +145,8 @@
       hotkeys: {
         toggle: String($('hotkey').value || '').trim() || base.hotkeys.toggle
       },
-      language: $('language').value || 'auto'
+      language: $('language').value || 'auto',
+      theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
     };
   }
 
@@ -286,6 +307,14 @@
       });
     });
 
+    $('theme-light').addEventListener('click', function () {
+      setTheme('light');
+    });
+
+    $('theme-dark').addEventListener('click', function () {
+      setTheme('dark');
+    });
+
     $('reset').addEventListener('click', async function () {
       if (!window.confirm(I.t('resetConfirm'))) return;
       settings = await S.resetSettings();
@@ -348,6 +377,13 @@
 
     // 小说在其他页面被导入 / 清除时，这里同步刷新
     chrome.storage.onChanged.addListener(function (changes, area) {
+      if (area === 'sync' && changes['fishone.settings']) {
+        const next = changes['fishone.settings'].newValue || {};
+        if (next.theme && next.theme !== document.documentElement.getAttribute('data-theme')) {
+          applyTheme(next.theme);
+        }
+        return;
+      }
       if (area !== 'local') return;
       if (changes['fishone.novel'] || changes['fishone.progress']) {
         refreshNovelInfo();

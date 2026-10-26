@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,6 +22,16 @@
         </div>
       </div>
       <div class="top-actions">
+        <div class="theme-switch" role="group" data-i18n-title="theme">
+          <button class="theme-btn" id="theme-light" type="button" data-theme-value="light" data-i18n-title="themeLight">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg>
+            <span data-i18n="themeLight">白天</span>
+          </button>
+          <button class="theme-btn" id="theme-dark" type="button" data-theme-value="dark" data-i18n-title="themeDark">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 14.6A8.4 8.4 0 019.4 3.6a8.4 8.4 0 1011 11z"/></svg>
+            <span data-i18n="themeDark">黑夜</span>
+          </button>
+        </div>
         <label class="lang-select">
           <span data-i18n="language">语言</span>
           <select id="language">
