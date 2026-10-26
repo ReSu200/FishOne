@@ -1,9 +1,36 @@
 /**
  * Service Worker：AI 请求转发（规避页面 CORS）、浏览器级快捷键、跨页面设置。
  */
-importScripts('lib/ai.js');
+importScripts('lib/ai.js', 'lib/storage.js');
 
 const SETTINGS_KEY = 'fishone.settings';
+
+function estimateTokens(text) {
+  // 粗略估算：中英混排平均约 1.5 个字符 ≈ 1 token
+  const len = String(text || '').length;
+  return Math.ceil(len / 1.5);
+}
+
+/**
+ * 记录一次总结调用的 Token 用量；服务未返回 usage 时退化为字符估算
+ */
+async function recordUsage(messages, resultText, usage) {
+  if (usage) {
+    await FishStore.addUsage(usage);
+    return;
+  }
+  const promptText = (messages || []).map(function (item) {
+    return item && item.content ? item.content : '';
+  }).join('\n');
+  const prompt = estimateTokens(promptText);
+  const completion = estimateTokens(resultText);
+  await FishStore.addUsage({
+    prompt: prompt,
+    completion: completion,
+    total: prompt + completion,
+    estimated: true
+  });
+}
 
 async function readSettings() {
   try {
@@ -58,6 +85,7 @@ chrome.runtime.onConnect.addListener(function (port) {
       });
 
       try {
+        let reportedUsage = null;
         const result = await FishAI.streamChat({
           apiKey: ai.apiKey,
           baseUrl: ai.baseUrl,
@@ -68,10 +96,16 @@ chrome.runtime.onConnect.addListener(function (port) {
           signal: controller.signal,
           onDelta: function (delta) {
             safePost(port, { type: 'delta', text: delta });
+          },
+          onUsage: function (usage) {
+            reportedUsage = usage;
           }
         });
         if (!controller.signal.aborted) {
           safePost(port, { type: 'done', text: result });
+          recordUsage(messages, result, reportedUsage).catch(function () {
+            /* 统计失败不影响阅读体验 */
+          });
         }
       } catch (err) {
         const message2 = err && err.message ? err.message : String(err);

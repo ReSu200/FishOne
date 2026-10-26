@@ -311,6 +311,38 @@
     });
   }
 
+  /* ------------------------------ Token 统计 ------------------------------ */
+
+  function fmtTime(timestamp) {
+    if (!timestamp) return '';
+    try {
+      return new Date(timestamp).toLocaleString(I.lang === 'en' ? 'en-US' : 'zh-CN', {
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (err) {
+      return new Date(timestamp).toLocaleString();
+    }
+  }
+
+  function renderUsage(usage) {
+    $('usage-prompt').textContent = fmt(usage.prompt);
+    $('usage-completion').textContent = fmt(usage.completion);
+    $('usage-total').textContent = fmt(usage.total);
+    $('usage-calls').textContent = fmt(usage.calls);
+
+    const notes = [];
+    if (usage.lastAt) notes.push(I.t('lastCall', { time: fmtTime(usage.lastAt) }));
+    if (usage.estimatedCalls > 0) notes.push(I.t('usageEstimated', { n: fmt(usage.estimatedCalls) }));
+    $('usage-note').textContent = usage.calls > 0 ? notes.join(' · ') : I.t('usageEmpty');
+  }
+
+  async function refreshUsage() {
+    renderUsage(await S.getUsage());
+  }
+
   /* ------------------------------ 事件绑定 ------------------------------ */
 
   function bind() {
@@ -355,6 +387,7 @@
       }
       fillForm(settings);
       await refreshNovelInfo();
+      await refreshUsage();
     });
 
     $('toggle-key').addEventListener('click', function () {
@@ -364,6 +397,13 @@
     });
 
     $('test-ai').addEventListener('click', testAi);
+
+    $('clear-usage').addEventListener('click', async function () {
+      if (!window.confirm(I.t('clearUsageConfirm'))) return;
+      await S.clearUsage();
+      await refreshUsage();
+      toast(I.t('usageCleared'));
+    });
 
     $('open-shortcuts').addEventListener('click', function () {
       const isEdge = /Edg\//.test(navigator.userAgent);
@@ -407,6 +447,9 @@
       if (changes['fishone.novel'] || changes['fishone.progress']) {
         refreshNovelInfo();
       }
+      if (changes['fishone.usage']) {
+        refreshUsage();
+      }
     });
 
     bindHotkeyRecorder();
@@ -421,6 +464,7 @@
     fillForm(settings);
     bind();
     await refreshNovelInfo();
+    await refreshUsage();
   }
 
   init().catch(function (err) {

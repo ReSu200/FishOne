@@ -59,6 +59,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3.5l1.6 4.2 4.2 1.6-4.2 1.6L11 15.1 9.4 10.9 5.2 9.3l4.2-1.6L11 3.5z"/><path d="M18 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"/></svg>
           <span data-i18n="secAi">AI 模型</span>
         </button>
+        <button class="nav-item" id="nav-tokens" type="button" role="tab" aria-selected="false" aria-controls="panel-tokens" data-panel="tokens">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M9.3 19V5M14.7 19v-7M20 19v-4"/></svg>
+          <span data-i18n="secTokens">Token 统计</span>
+        </button>
         <button class="nav-item" id="nav-hotkey" type="button" role="tab" aria-selected="false" aria-controls="panel-hotkey" data-panel="hotkey">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="2.5"/><path d="M6.6 10h.01M9.6 10h.01M12.6 10h.01M15.6 10h.01M18 10h.01M8 13.8h8"/></svg>
           <span data-i18n="secHotkey">快捷键</span>
@@ -199,6 +203,35 @@
           <div class="card-foot">
             <button class="btn ghost" id="test-ai" type="button" data-i18n="testAi">测试连接</button>
             <span class="status" id="test-status"></span>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-tokens" role="tabpanel" aria-labelledby="nav-tokens">
+          <div class="card-title">
+            <h2 data-i18n="secTokens">Token 统计</h2>
+            <p data-i18n="secTokensDesc">查看 AI 总结调用的 Token 消耗</p>
+          </div>
+          <div class="stat-grid">
+            <div class="stat">
+              <span class="stat-label" data-i18n="statPrompt">提示 Tokens</span>
+              <strong class="stat-value" id="usage-prompt">0</strong>
+            </div>
+            <div class="stat">
+              <span class="stat-label" data-i18n="statCompletion">补全 Tokens</span>
+              <strong class="stat-value" id="usage-completion">0</strong>
+            </div>
+            <div class="stat">
+              <span class="stat-label" data-i18n="statTotal">合计 Tokens</span>
+              <strong class="stat-value accent" id="usage-total">0</strong>
+            </div>
+            <div class="stat">
+              <span class="stat-label" data-i18n="statCalls">调用次数</span>
+              <strong class="stat-value" id="usage-calls">0</strong>
+            </div>
+          </div>
+          <div class="card-foot">
+            <span class="status" id="usage-note"></span>
+            <button class="btn ghost danger" id="clear-usage" type="button" data-i18n="clearUsage">清空统计</button>
           </div>
         </section>
 
