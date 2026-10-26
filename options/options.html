@@ -71,6 +71,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6.4" rx="7" ry="2.7"/><path d="M5 6.4v11.2c0 1.5 3.1 2.7 7 2.7s7-1.2 7-2.7V6.4"/><path d="M5 12c0 1.5 3.1 2.7 7 2.7s7-1.2 7-2.7"/></svg>
           <span data-i18n="secGeneral">通用</span>
         </button>
+        <button class="nav-item" id="nav-sponsor" type="button" role="tab" aria-selected="false" aria-controls="panel-sponsor" data-panel="sponsor">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2s-7.2-4.4-7.2-9.1a4.1 4.1 0 017.2-2.7 4.1 4.1 0 017.2 2.7c0 4.7-7.2 9.1-7.2 9.1z"/></svg>
+          <span data-i18n="secSponsor">赞助</span>
+        </button>
       </nav>
 
       <div class="panels">
@@ -273,10 +277,62 @@
             </div>
           </div>
         </section>
+
+        <section class="panel" id="panel-sponsor" role="tabpanel" aria-labelledby="nav-sponsor">
+          <div class="card-title">
+            <h2 data-i18n="aboutTitle">关于 FishOne</h2>
+            <p id="about-version"></p>
+          </div>
+          <p class="about-text" data-i18n="aboutText"></p>
+
+          <div class="sub-title">
+            <h3 data-i18n="rewardTitle">打赏支持</h3>
+            <p data-i18n="rewardDesc"></p>
+          </div>
+
+          <div class="qr-grid">
+            <div class="qr-slot" data-slot="alipay">
+              <div class="qr-frame">
+                <img class="qr-image" id="qr-alipay" alt="">
+                <div class="qr-empty" id="qr-alipay-empty">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="6" height="6" rx="1"/><rect x="14.5" y="3.5" width="6" height="6" rx="1"/><rect x="3.5" y="14.5" width="6" height="6" rx="1"/><path d="M14.5 14.5h2.2v2.2h-2.2zM19.5 19.5h1M19.5 14.5h1M14.5 19.5h2"/></svg>
+                  <span data-i18n="qrEmpty">尚未放置收款码</span>
+                </div>
+              </div>
+              <div class="qr-actions">
+                <span class="qr-label" data-i18n="alipay">支付宝</span>
+                <span class="qr-buttons">
+                  <button class="btn ghost small" type="button" data-qr-upload="alipay" data-i18n="uploadQr">上传收款码</button>
+                  <button class="btn ghost small danger" type="button" data-qr-remove="alipay" data-i18n="removeQr" hidden>删除</button>
+                </span>
+              </div>
+            </div>
+
+            <div class="qr-slot" data-slot="wechat">
+              <div class="qr-frame">
+                <img class="qr-image" id="qr-wechat" alt="">
+                <div class="qr-empty" id="qr-wechat-empty">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="6" height="6" rx="1"/><rect x="14.5" y="3.5" width="6" height="6" rx="1"/><rect x="3.5" y="14.5" width="6" height="6" rx="1"/><path d="M14.5 14.5h2.2v2.2h-2.2zM19.5 19.5h1M19.5 14.5h1M14.5 19.5h2"/></svg>
+                  <span data-i18n="qrEmpty">尚未放置收款码</span>
+                </div>
+              </div>
+              <div class="qr-actions">
+                <span class="qr-label" data-i18n="wechat">微信</span>
+                <span class="qr-buttons">
+                  <button class="btn ghost small" type="button" data-qr-upload="wechat" data-i18n="uploadQr">上传收款码</button>
+                  <button class="btn ghost small danger" type="button" data-qr-remove="wechat" data-i18n="removeQr" hidden>删除</button>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p class="field-hint" data-i18n="qrHint"></p>
+        </section>
       </div>
     </div>
 
     <input type="file" id="file-input" accept=".txt,text/plain" hidden>
+    <input type="file" id="qr-input" accept="image/*" hidden>
   </div>
 
   <div class="toast" id="toast"></div>

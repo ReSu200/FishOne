@@ -343,6 +343,110 @@
     renderUsage(await S.getUsage());
   }
 
+  /* ------------------------------ 赞助 ------------------------------ */
+
+  const QR_MAX_EDGE = 720;
+  const QR_MAX_CHARS = 2400000;
+
+  let sponsor = { alipay: '', wechat: '' };
+  let qrTarget = null;
+
+  function loadImage(src) {
+    return new Promise(function (resolve) {
+      const img = new Image();
+      img.onload = function () {
+        resolve(img);
+      };
+      img.onerror = function () {
+        resolve(null);
+      };
+      img.src = src;
+    });
+  }
+
+  async function renderQrSlot(slot) {
+    const img = $('qr-' + slot);
+    const wrap = img.closest('.qr-slot');
+    const custom = sponsor[slot] || '';
+    let src = custom;
+
+    if (!src) {
+      const builtin = chrome.runtime.getURL('assets/sponsor/' + slot + '.png');
+      src = (await loadImage(builtin)) ? builtin : '';
+    }
+
+    wrap.classList.toggle('has-image', !!src);
+    if (src) {
+      img.src = src;
+      img.alt = I.t(slot === 'alipay' ? 'alipay' : 'wechat');
+    } else {
+      img.removeAttribute('src');
+    }
+
+    wrap.querySelector('[data-qr-upload]').textContent = src ? I.t('replaceQr') : I.t('uploadQr');
+    wrap.querySelector('[data-qr-remove]').hidden = !custom;
+  }
+
+  async function refreshSponsor() {
+    sponsor = await S.getSponsor();
+    $('about-version').textContent = I.t('aboutVersion', {
+      v: chrome.runtime.getManifest().version
+    });
+    await Promise.all([renderQrSlot('alipay'), renderQrSlot('wechat')]);
+  }
+
+  function readAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        resolve(String(reader.result || ''));
+      };
+      reader.onerror = function () {
+        reject(new Error('read-failed'));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function shrinkImage(dataUrl) {
+    const img = await loadImage(dataUrl);
+    if (!img) throw new Error('decode-failed');
+    const edge = Math.max(img.naturalWidth, img.naturalHeight);
+    if (edge <= QR_MAX_EDGE) return dataUrl;
+
+    const scale = QR_MAX_EDGE / edge;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/png');
+  }
+
+  async function handleQrFile(file) {
+    if (!file || !qrTarget) return;
+    if (!/^image\//.test(file.type || '')) {
+      toast(I.t('imageOnly'));
+      return;
+    }
+    const slot = qrTarget;
+    try {
+      const raw = await readAsDataUrl(file);
+      const dataUrl = await shrinkImage(raw);
+      if (dataUrl.length > QR_MAX_CHARS) {
+        toast(I.t('qrTooBig'));
+        return;
+      }
+      sponsor = await S.setSponsorImage(slot, dataUrl);
+      await renderQrSlot(slot);
+      toast(I.t('qrSaved'));
+    } catch (err) {
+      toast(I.t('qrTooBig'));
+    }
+  }
+
   /* ------------------------------ 事件绑定 ------------------------------ */
 
   function bind() {
@@ -388,6 +492,7 @@
       fillForm(settings);
       await refreshNovelInfo();
       await refreshUsage();
+      await refreshSponsor();
     });
 
     $('toggle-key').addEventListener('click', function () {
@@ -397,6 +502,29 @@
     });
 
     $('test-ai').addEventListener('click', testAi);
+
+    document.querySelectorAll('[data-qr-upload]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        qrTarget = btn.getAttribute('data-qr-upload');
+        $('qr-input').click();
+      });
+    });
+
+    $('qr-input').addEventListener('change', function (event) {
+      const file = event.target.files && event.target.files[0];
+      handleQrFile(file).finally(function () {
+        event.target.value = '';
+      });
+    });
+
+    document.querySelectorAll('[data-qr-remove]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        const slot = btn.getAttribute('data-qr-remove');
+        sponsor = await S.removeSponsorImage(slot);
+        await renderQrSlot(slot);
+        toast(I.t('qrRemoved'));
+      });
+    });
 
     $('clear-usage').addEventListener('click', async function () {
       if (!window.confirm(I.t('clearUsageConfirm'))) return;
@@ -465,6 +593,7 @@
     bind();
     await refreshNovelInfo();
     await refreshUsage();
+    await refreshSponsor();
   }
 
   init().catch(function (err) {
