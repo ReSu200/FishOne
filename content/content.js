@@ -973,10 +973,9 @@
     switchAiTab('summary');
     els.aiResult.scrollTop = 0;
     setAiStatus('');
-    // 先按分栏后的宽度重新分页，保证「本页」统计与屏幕上看到的一致；随后直接开始总结
-    refitSoon().then(function () {
-      if (els.aiPanel.classList.contains('fo-on')) startAi();
-    });
+    // 按分栏后的宽度重新分页，让「本页」估算与屏幕上看到的一致；
+    // 是否开始总结交给用户点击按钮确认
+    refitSoon();
   }
 
   function closeAiPanel() {
