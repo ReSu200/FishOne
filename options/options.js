@@ -70,6 +70,19 @@
     }
   }
 
+  /* ------------------------------ 阅读方式 ------------------------------ */
+
+  function applyMode(mode) {
+    const next = mode === 'scroll' ? 'scroll' : 'page';
+    $('mode-page').classList.toggle('active', next === 'page');
+    $('mode-scroll').classList.toggle('active', next === 'scroll');
+    return next;
+  }
+
+  function currentMode() {
+    return $('mode-scroll').classList.contains('active') ? 'scroll' : 'page';
+  }
+
   /* ------------------------------ 表单读写 ------------------------------ */
 
   function fillForm(data) {
@@ -89,6 +102,7 @@
     $('blur').value = r.blur;
     $('radius').value = r.radius;
     $('border').checked = r.border !== false;
+    applyMode(r.mode);
 
     $('apiKey').value = ai.apiKey || '';
     $('baseUrl').value = ai.baseUrl || '';
@@ -140,6 +154,7 @@
         blur: Math.round(clampNumber($('blur').value, base.reader.blur, 0, 24)),
         radius: Math.round(clampNumber($('radius').value, base.reader.radius, 0, 32)),
         border: $('border').checked,
+        mode: currentMode(),
         // AI 分栏宽度由阅读器拖动保存，设置页保存时原样带回
         aiSplit: clampNumber(base.reader.aiSplit, 45, 30, 65)
       },
@@ -410,6 +425,12 @@
 
     $('theme-dark').addEventListener('click', function () {
       setTheme('dark');
+    });
+
+    document.querySelectorAll('[data-mode-value]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        applyMode(btn.getAttribute('data-mode-value'));
+      });
     });
 
     $('reset').addEventListener('click', async function () {

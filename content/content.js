@@ -196,9 +196,15 @@
       '  </div>',
       '</div>',
       '<div class="fo-foot">',
-      '  <button class="fo-btn" data-act="prev" data-i18n="prevPage"></button>',
-      '  <div class="fo-meta"></div>',
-      '  <button class="fo-btn" data-act="next" data-i18n="nextPage"></button>',
+      '  <div class="fo-mode" role="group">',
+      '    <button class="fo-mode-btn" data-act="mode" data-mode="page"></button>',
+      '    <button class="fo-mode-btn" data-act="mode" data-mode="scroll"></button>',
+      '  </div>',
+      '  <div class="fo-foot-nav">',
+      '    <button class="fo-btn" data-act="prev" data-i18n="prevPage"></button>',
+      '    <div class="fo-meta"></div>',
+      '    <button class="fo-btn" data-act="next" data-i18n="nextPage"></button>',
+      '  </div>',
       '</div>',
       '<div class="fo-resize"></div>',
       '<div class="fo-toast"></div>',
@@ -220,6 +226,8 @@
     els.emptyTitle = panel.querySelector('.fo-empty-title');
     els.emptyHint = panel.querySelector('.fo-empty-hint');
     els.meta = panel.querySelector('.fo-meta');
+    els.modeBtns = Array.prototype.slice.call(panel.querySelectorAll('.fo-mode-btn'));
+    els.footNav = panel.querySelector('.fo-foot-nav');
     els.resize = panel.querySelector('.fo-resize');
     els.toast = panel.querySelector('.fo-toast');
     els.fileInput = panel.querySelector('.fo-file');
@@ -293,6 +301,43 @@
     els.head.querySelector('[data-act="ai"]').setAttribute('title', I.t('ai'));
     els.fileInput.setAttribute('accept', '.txt,text/plain');
     updateAiLayout();
+    applyModeChrome();
+  }
+
+  function isScrollMode() {
+    return !!(settings && settings.reader && settings.reader.mode === 'scroll');
+  }
+
+  /**
+   * 同步底栏的模式按钮、翻页按钮显隐与相关文案
+   */
+  function applyModeChrome() {
+    if (!els.panel) return;
+    const scroll = isScrollMode();
+    els.panel.classList.toggle('fo-mode-scroll', scroll);
+    els.text.classList.toggle('fo-scroll', scroll);
+    if (els.modeBtns) {
+      els.modeBtns.forEach(function (btn) {
+        const mode = btn.getAttribute('data-mode');
+        btn.classList.toggle('fo-on', (mode === 'scroll') === scroll);
+        btn.textContent = I.t(mode === 'scroll' ? 'modeScroll' : 'modePage');
+        btn.setAttribute('title', I.t(mode === 'scroll' ? 'modeScrollHint' : 'modePageHint'));
+      });
+    }
+    const pageScope = els.aiSeg ? els.aiSeg.querySelector('[data-scope="page"]') : null;
+    if (pageScope) pageScope.textContent = I.t(scroll ? 'aiScopeScreen' : 'aiScopePage');
+  }
+
+  function setMode(mode) {
+    if (!settings || !settings.reader) return;
+    const next = mode === 'scroll' ? 'scroll' : 'page';
+    if (settings.reader.mode === next) return;
+    settings.reader.mode = next;
+    applyModeChrome();
+    if (state.visible) render();
+    S.patchSettings({ 'reader.mode': next }).catch(function () {
+      /* noop */
+    });
   }
 
   function updateStaticText() {
@@ -308,6 +353,7 @@
     els.aiResult.setAttribute('data-ph', I.t('aiResultEmpty'));
     updateAiEstimate();
     if (els.aiHistoryView && els.aiHistoryView.classList.contains('fo-on')) renderAiHistory();
+    applyModeChrome();
     updateChrome();
   }
 
@@ -471,7 +517,7 @@
   }
 
   function buildPageIndex() {
-    if (!state.visible || !novel || !novel.text) {
+    if (!state.visible || !novel || !novel.text || isScrollMode()) {
       pageIndex.timer = null;
       return;
     }
@@ -565,6 +611,181 @@
     }
   }
 
+  /* ------------------------------ 滚动模式 ------------------------------ */
+
+  // 每块约为两屏文字量，只保留可视区前后少量块，长书也不会撑爆 DOM
+  const SCROLL_BLOCK_FACTOR = 2;
+  const SCROLL_MAX_BLOCKS = 6;
+
+  const scrollState = {
+    blocks: [],
+    unit: 0,
+    raf: 0
+  };
+
+  function scrollUnit() {
+    if (!scrollState.unit) scrollState.unit = Math.max(1, state.pageCharCount || estimateCharsPerPage());
+    return scrollState.unit;
+  }
+
+  function createBlock(start) {
+    const text = novel.text;
+    const size = Math.max(1, Math.min(text.length - start, scrollUnit() * SCROLL_BLOCK_FACTOR));
+    const end = Math.min(text.length, start + size);
+    const el = document.createElement('div');
+    el.className = 'fo-block';
+    el.setAttribute('data-start', String(start));
+    el.setAttribute('data-end', String(end));
+    el.textContent = text.slice(start, end);
+    return { start: start, end: end, el: el };
+  }
+
+  function appendBlock() {
+    const last = scrollState.blocks[scrollState.blocks.length - 1];
+    if (!last || last.end >= novel.text.length) return false;
+    const block = createBlock(last.end);
+    els.text.appendChild(block.el);
+    scrollState.blocks.push(block);
+    return true;
+  }
+
+  function prependBlock() {
+    const first = scrollState.blocks[0];
+    if (!first || first.start <= 0) return false;
+    const size = Math.min(first.start, scrollUnit() * SCROLL_BLOCK_FACTOR);
+    const block = createBlock(first.start - size);
+    const before = els.text.scrollHeight;
+    els.text.insertBefore(block.el, first.el);
+    scrollState.blocks.unshift(block);
+    // 前插后补偿滚动位置，避免视觉跳动
+    els.text.scrollTop += els.text.scrollHeight - before;
+    return true;
+  }
+
+  function scrollRect() {
+    return els.text.getBoundingClientRect();
+  }
+
+  // 接近上下边界时补块，滚远的块及时丢弃
+  function ensureScrollEdges() {
+    const rect = scrollRect();
+    let guard = 0;
+    while (guard < 8) {
+      const last = scrollState.blocks[scrollState.blocks.length - 1];
+      if (!last || last.end >= novel.text.length) break;
+      if (last.el.getBoundingClientRect().bottom > rect.bottom + rect.height * 0.8) break;
+      if (!appendBlock()) break;
+      guard += 1;
+    }
+
+    guard = 0;
+    while (guard < 8) {
+      const first = scrollState.blocks[0];
+      if (!first || first.start <= 0) break;
+      // 只有首块顶部离开视口上方不远时，才需要向上补内容
+      if (first.el.getBoundingClientRect().top <= rect.top - rect.height * 0.6) break;
+      if (!prependBlock()) break;
+      guard += 1;
+    }
+
+    while (scrollState.blocks.length > SCROLL_MAX_BLOCKS) {
+      const first = scrollState.blocks[0];
+      const last = scrollState.blocks[scrollState.blocks.length - 1];
+      const firstRect = first.el.getBoundingClientRect();
+      const lastRect = last.el.getBoundingClientRect();
+      if (firstRect.bottom < rect.top - rect.height * 0.5 && scrollState.blocks.length > 2) {
+        const before = els.text.scrollHeight;
+        els.text.removeChild(first.el);
+        scrollState.blocks.shift();
+        els.text.scrollTop = Math.max(0, els.text.scrollTop - (before - els.text.scrollHeight));
+      } else if (lastRect.top > rect.bottom + rect.height * 0.5) {
+        els.text.removeChild(last.el);
+        scrollState.blocks.pop();
+      } else {
+        break;
+      }
+    }
+  }
+
+  /**
+   * 按块内文字比例换算当前屏幕对应的字符区间
+   */
+  function visibleRange() {
+    const rect = scrollRect();
+    let start = null;
+    let end = null;
+    scrollState.blocks.forEach(function (block) {
+      const r = block.el.getBoundingClientRect();
+      if (r.bottom <= rect.top + 1 || r.top >= rect.bottom - 1) return;
+      const len = block.end - block.start;
+      const overhead = Math.max(0, rect.top - r.top);
+      const below = Math.max(0, r.bottom - rect.bottom);
+      const s = block.start + (r.height > 0 ? Math.floor(len * overhead / r.height) : 0);
+      const e = block.end - (r.height > 0 ? Math.floor(len * below / r.height) : 0);
+      if (start === null) start = s;
+      end = Math.max(e, s + 1);
+    });
+
+    if (start === null) {
+      const first = scrollState.blocks[0];
+      const last = scrollState.blocks[scrollState.blocks.length - 1];
+      start = first ? first.start : 0;
+      end = last ? last.end : 0;
+    }
+
+    const total = novel.text.length;
+    start = clamp(start, 0, Math.max(0, total - 1));
+    end = clamp(Math.max(end, start + 1), start + 1, total);
+    return { start: start, end: end };
+  }
+
+  function syncScrollPosition() {
+    if (!novel || !novel.text) return;
+    const range = visibleRange();
+    state.charPos = range.start;
+    state.pageText = novel.text.slice(range.start, range.end);
+    state.pageCharCount = Math.max(1, range.end - range.start);
+  }
+
+  function renderScroll() {
+    clearTimeout(pageIndex.timer);
+    pageIndex.timer = null;
+    const text = novel.text;
+    els.text.textContent = '';
+    scrollState.blocks = [];
+    scrollState.unit = 0;
+    const first = createBlock(state.charPos);
+    els.text.appendChild(first.el);
+    scrollState.blocks.push(first);
+    els.text.scrollTop = 0;
+    ensureScrollEdges();
+    syncScrollPosition();
+  }
+
+  function onTextScroll() {
+    if (!state.visible || !isScrollMode()) return;
+    if (scrollState.raf) return;
+    scrollState.raf = requestAnimationFrame(function () {
+      scrollState.raf = 0;
+      if (!state.visible || !isScrollMode()) return;
+      ensureScrollEdges();
+      syncScrollPosition();
+      updateChrome();
+      if (els.aiPanel && els.aiPanel.classList.contains('fo-on')) updateAiEstimate();
+      scheduleSave();
+    });
+  }
+
+  function scrollByStep(direction, big) {
+    const cs = getComputedStyle(els.text);
+    const step = big
+      ? Math.max(80, els.text.clientHeight * 0.9)
+      : Math.max(24, (parseFloat(cs.lineHeight) || 28) * 3);
+    const top = els.text.scrollTop + direction * step;
+    if (els.text.scrollTo) els.text.scrollTo({ top: top, behavior: 'smooth' });
+    else els.text.scrollTop = top;
+  }
+
   function render(options) {
     if (!state.visible) {
       state.dirty = true;
@@ -577,9 +798,20 @@
     }
     showEmpty(false);
 
+    applyModeChrome();
+
     const text = novel.text;
     if (state.charPos >= text.length) state.charPos = 0;
     state.charPos = skipLeadingSpace(text, state.charPos);
+
+    if (isScrollMode()) {
+      renderScroll();
+      if (options && options.animate) playFade();
+      updateChrome();
+      if (els.aiPanel && els.aiPanel.classList.contains('fo-on')) updateAiEstimate();
+      scheduleSave();
+      return;
+    }
 
     const count = fitPage(state.charPos);
     state.pageCharCount = count;
@@ -601,7 +833,12 @@
     els.progressBar.style.width = pct.toFixed(2) + '%';
     els.titleName.textContent = novel ? novel.name : I.t('appName');
     els.titlePage.textContent = total > 0 ? pct.toFixed(1) + '%' : '';
-    if (novel) {
+    if (novel && isScrollMode()) {
+      els.meta.textContent = I.t('wordsMeta', {
+        pos: numberText(pos),
+        total: numberText(total)
+      });
+    } else if (novel) {
       const stats = pageStats();
       els.meta.textContent = I.t('pageMeta', {
         page: numberText(stats.page),
@@ -619,6 +856,10 @@
       showToast(I.t('noNovel'));
       return;
     }
+    if (isScrollMode()) {
+      scrollByStep(1, true);
+      return;
+    }
     const total = novel.text.length;
     if (state.charPos + state.pageCharCount >= total) {
       showToast(I.t('endOfNovel'));
@@ -633,6 +874,10 @@
   function prevPage() {
     if (!novel) {
       showToast(I.t('noNovel'));
+      return;
+    }
+    if (isScrollMode()) {
+      scrollByStep(-1, true);
       return;
     }
     if (state.history.length) {
@@ -912,8 +1157,26 @@
 
   function onWheel(event) {
     if (!state.visible) return;
-    // AI 面板内滚动查看结果时不应触发翻页
     const path = event.composedPath ? event.composedPath() : [];
+    if (isScrollMode()) {
+      // 滚动模式：正文自身滚动，其余区域一律吞掉滚轮，避免带动背后的网页
+      let inText = false;
+      let inAi = false;
+      for (let i = 0; i < path.length; i += 1) {
+        if (path[i] === els.aiPanel) inAi = true;
+        if (path[i] === els.text) inText = true;
+      }
+      if (inAi) return;
+      if (inText) {
+        const el = els.text;
+        const atTop = el.scrollTop <= 0;
+        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+        if ((event.deltaY < 0 && !atTop) || (event.deltaY > 0 && !atBottom)) return;
+      }
+      event.preventDefault();
+      return;
+    }
+    // AI 面板内滚动查看结果时不应触发翻页
     for (let i = 0; i < path.length; i += 1) {
       if (path[i] === els.aiPanel) return;
     }
@@ -1029,7 +1292,7 @@
   function scopeLabel(scope) {
     if (scope === 'recent') return I.t('aiScopeRecent');
     if (scope === 'book') return I.t('aiScopeBook');
-    return I.t('aiScopePage');
+    return I.t(isScrollMode() ? 'aiScopeScreen' : 'aiScopePage');
   }
 
   /**
@@ -1425,6 +1688,7 @@
       else if (act === 'ai-copy') copyAiResult();
       else if (act === 'prev') prevPage();
       else if (act === 'next') nextPage();
+      else if (act === 'mode') setMode(btn.getAttribute('data-mode'));
       else if (act === 'import') els.fileInput.click();
     });
 
@@ -1440,6 +1704,7 @@
     els.aiSystem.addEventListener('input', onSystemPromptInput);
 
     els.body.addEventListener('wheel', onWheel, { passive: false });
+    els.text.addEventListener('scroll', onTextScroll, { passive: true });
     els.panel.addEventListener('contextmenu', function (event) {
       event.stopPropagation();
     });

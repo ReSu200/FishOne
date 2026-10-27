@@ -346,6 +346,10 @@ select:focus {
   grid-column: span 2;
 }
 
+.field .theme-switch {
+  align-self: flex-start;
+}
+
 .field {
   display: flex;
   flex-direction: column;

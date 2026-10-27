@@ -84,6 +84,14 @@
             <p data-i18n="secDisplayDesc">阅读器悬浮在网页上的位置与大小</p>
           </div>
           <div class="grid">
+            <div class="field span-2">
+              <span class="field-label" data-i18n="readerMode">阅读方式</span>
+              <div class="theme-switch" role="group" data-i18n-title="readerModeHint">
+                <button class="theme-btn" id="mode-page" type="button" data-mode-value="page" data-i18n="modePage">翻页</button>
+                <button class="theme-btn" id="mode-scroll" type="button" data-mode-value="scroll" data-i18n="modeScroll">滚动</button>
+              </div>
+              <span class="field-hint" data-i18n="readerModeHint">翻页：一屏一页；滚动：整本连续滚动</span>
+            </div>
             <label class="field">
               <span class="field-label" data-i18n="left">左侧距离 (px)</span>
               <input class="input" id="left" type="number" min="0" max="4000" step="1">
