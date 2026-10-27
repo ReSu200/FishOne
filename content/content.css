@@ -337,6 +337,8 @@
   height: 16px;
   cursor: nwse-resize;
   opacity: 0.5;
+  /* 高于 AI 面板，保证覆盖式布局下仍能拖宽阅读器 */
+  z-index: 5;
 }
 
 .fo-resize::after {
@@ -480,6 +482,59 @@
 
 .fo-ai .fo-btn:hover {
   background: var(--fo-ai-soft, rgba(255, 255, 255, 0.06));
+}
+
+/* 窄窗口提示：告知可拖宽阅读器并排查看 */
+.fo-ai-hint {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 6px 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--fo-ai-line, rgba(255, 255, 255, 0.12));
+  background: var(--fo-ai-soft, rgba(255, 255, 255, 0.05));
+  color: var(--fo-ai-muted, rgba(233, 237, 241, 0.58));
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.fo-ai-hint[hidden] {
+  display: none;
+}
+
+.fo-ai-hint-icon {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  opacity: 0.85;
+}
+
+.fo-ai-hint-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fo-ai-hint-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fo-ai-hint-close {
+  flex: 0 0 auto;
+  height: 20px;
+  min-width: 20px;
+  padding: 0;
+}
+
+.fo-ai-hint-close svg {
+  width: 11px;
+  height: 11px;
 }
 
 .fo-ai-view {

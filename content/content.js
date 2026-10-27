@@ -30,6 +30,8 @@
 
   let aiPort = null;
   let aiBusy = false;
+  // 分栏提示只在本次会话内可关闭，刷新页面后会重新提醒
+  let aiSplitHintClosed = false;
   let aiRawText = '';
   let aiScopeChars = 0;
   let aiRunScope = 'page';
@@ -108,7 +110,8 @@
     ai: '<svg viewBox="0 0 24 24"><path d="M12 3l1.7 4.6L18 9.3l-4.3 1.7L12 15.6l-1.7-4.6L6 9.3l4.3-1.7z"/><path d="M18 15l.9 2.4L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.6z"/></svg>',
     gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>',
     close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
-    book: '<svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 016.5 3H19v15H6.5A2.5 2.5 0 004 20.5z"/><path d="M4 20.5A2.5 2.5 0 016.5 18H19v3H6.5"/></svg>'
+    book: '<svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 016.5 3H19v15H6.5A2.5 2.5 0 004 20.5z"/><path d="M4 20.5A2.5 2.5 0 016.5 18H19v3H6.5"/></svg>',
+    splitHint: '<svg viewBox="0 0 24 24"><path d="M4 12h16"/><path d="M8 8l-4 4 4 4"/><path d="M16 8l4 4-4 4"/></svg>'
   };
 
   function buildUi() {
@@ -159,6 +162,11 @@
       '        <button class="fo-ai-tab" data-act="ai-tab" data-tab="history" data-i18n="aiTabHistory"></button>',
       '      </div>',
       '      <button class="fo-btn" data-act="ai-close" data-i18n-title="close">' + ICON.close + '</button>',
+      '    </div>',
+      '    <div class="fo-ai-hint" hidden>',
+      '      <span class="fo-ai-hint-icon">' + ICON.splitHint + '</span>',
+      '      <span class="fo-ai-hint-text" data-i18n="aiSplitHint"></span>',
+      '      <button class="fo-btn fo-ai-hint-close" data-act="ai-hint-close" data-i18n-title="close">' + ICON.close + '</button>',
       '    </div>',
       '    <div class="fo-ai-view fo-ai-view-summary" data-view="summary">',
       '      <div class="fo-ai-scope">',
@@ -232,6 +240,7 @@
     els.toast = panel.querySelector('.fo-toast');
     els.fileInput = panel.querySelector('.fo-file');
     els.aiPanel = panel.querySelector('.fo-ai');
+    els.aiHint = panel.querySelector('.fo-ai-hint');
     els.aiTabs = panel.querySelector('.fo-ai-tabs');
     els.aiSummaryView = panel.querySelector('.fo-ai-view-summary');
     els.aiHistoryView = panel.querySelector('.fo-ai-view-history');
@@ -1339,6 +1348,10 @@
     const overlay = width > 0 && width < 560;
     els.body.classList.toggle('fo-ai-overlay', overlay);
     els.body.classList.toggle('fo-ai-on', els.aiPanel.classList.contains('fo-on'));
+    // 覆盖式布局下提示用户拖宽阅读器即可并排查看；本次会话内关闭后不再出现
+    if (els.aiHint) {
+      els.aiHint.hidden = !(overlay && els.aiPanel.classList.contains('fo-on') && !aiSplitHintClosed);
+    }
   }
 
   // 布局变化（分栏开关、拖动分隔条）后需要重新分页，charPos 保持不变
@@ -1685,6 +1698,10 @@
       else if (act === 'ai-hist-jump') jumpToAiHistory(btn.getAttribute('data-id'));
       else if (act === 'ai-hist-del') deleteAiHistory(btn.getAttribute('data-id'));
       else if (act === 'ai-hist-clear') clearAiHistory();
+      else if (act === 'ai-hint-close') {
+        aiSplitHintClosed = true;
+        if (els.aiHint) els.aiHint.hidden = true;
+      }
       else if (act === 'ai-copy') copyAiResult();
       else if (act === 'prev') prevPage();
       else if (act === 'next') nextPage();
