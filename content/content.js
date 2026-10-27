@@ -342,6 +342,8 @@
   function hide() {
     if (!state.visible) return;
     state.visible = false;
+    clearTimeout(pageIndex.timer);
+    pageIndex.timer = null;
     syncVisibility();
     persistProgress(true);
     if (els.aiPanel) els.aiPanel.classList.remove('fo-on');
@@ -379,7 +381,7 @@
     return els.measure.scrollHeight;
   }
 
-  function fitPage(start) {
+  function measurePage(start, estimate) {
     const text = novel.text;
     const remaining = text.length - start;
     if (remaining <= 0) return 0;
@@ -394,9 +396,9 @@
     els.measure.style.fontFamily = cs.fontFamily;
     els.measure.style.textAlign = cs.textAlign;
 
-    const estimate = state.pageCharCount || estimateCharsPerPage();
-    let lo = Math.max(1, Math.round(estimate * 0.4));
-    let hi = Math.min(remaining, Math.round(estimate * 3));
+    const unit = estimate || estimateCharsPerPage();
+    let lo = Math.max(1, Math.round(unit * 0.4));
+    let hi = Math.min(remaining, Math.round(unit * 3));
     let best = Math.min(lo, remaining);
 
     while (lo <= hi) {
@@ -425,10 +427,127 @@
     return Math.max(1, Math.min(best, remaining));
   }
 
+  function fitPage(start) {
+    return measurePage(start, state.pageCharCount);
+  }
+
   function skipLeadingSpace(text, pos) {
     let p = pos;
     while (p < text.length && (text[p] === '\n' || text[p] === ' ' || text[p] === '\t')) p += 1;
     return p;
+  }
+
+  /* ------------------------------ 页码索引 ------------------------------ */
+
+  // 全书页码要按当前排版逐页量一遍，耗时随字数增长；
+  // 这里分片推进（每片约 12ms），未算完时先用平均值估算，算完后自动校正
+  const pageIndex = {
+    sig: '',
+    starts: [0],
+    done: true,
+    timer: null
+  };
+
+  function layoutSignature() {
+    const cs = getComputedStyle(els.text);
+    return [
+      novel ? novel.id + ':' + novel.text.length : '',
+      els.text.clientWidth,
+      els.text.clientHeight,
+      cs.fontSize,
+      cs.lineHeight,
+      cs.fontFamily,
+      cs.textAlign
+    ].join('|');
+  }
+
+  function resetPageIndex() {
+    clearTimeout(pageIndex.timer);
+    pageIndex.timer = null;
+    pageIndex.sig = layoutSignature();
+    pageIndex.starts = [0];
+    pageIndex.done = !novel || !novel.text;
+    if (!pageIndex.done) buildPageIndex();
+  }
+
+  function buildPageIndex() {
+    if (!state.visible || !novel || !novel.text) {
+      pageIndex.timer = null;
+      return;
+    }
+    const text = novel.text;
+    const started = performance.now();
+    let estimate = state.pageCharCount || estimateCharsPerPage();
+
+    while (performance.now() - started < 12) {
+      const start = pageIndex.starts[pageIndex.starts.length - 1];
+      const count = measurePage(start, estimate);
+      const next = start + count;
+      if (next >= text.length) {
+        pageIndex.done = true;
+        break;
+      }
+      pageIndex.starts.push(next);
+      estimate = count;
+    }
+
+    if (pageIndex.done) {
+      pageIndex.timer = null;
+      updateChrome();
+      return;
+    }
+    pageIndex.timer = setTimeout(buildPageIndex, 0);
+  }
+
+  function ensurePageIndex() {
+    if (!novel || !novel.text) {
+      pageIndex.done = true;
+      return;
+    }
+    if (pageIndex.sig !== layoutSignature()) {
+      resetPageIndex();
+      return;
+    }
+    if (!pageIndex.done && !pageIndex.timer) buildPageIndex();
+  }
+
+  function knownPageNumber(pos) {
+    const starts = pageIndex.starts;
+    let lo = 0;
+    let hi = starts.length - 1;
+    let idx = 0;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (starts[mid] <= pos) {
+        idx = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    return idx + 1;
+  }
+
+  function pageStats() {
+    const total = novel && novel.text ? novel.text.length : 0;
+    const starts = pageIndex.starts;
+    const lastStart = starts[starts.length - 1];
+    if (pageIndex.done) {
+      return { page: knownPageNumber(state.charPos), total: starts.length, exact: true };
+    }
+    const completed = starts.length - 1;
+    const avg = completed > 0
+      ? lastStart / completed
+      : (state.pageCharCount || estimateCharsPerPage());
+    const estimateTotal = Math.max(starts.length, Math.ceil(total / Math.max(1, avg)));
+    if (state.charPos <= lastStart) {
+      return { page: knownPageNumber(state.charPos), total: estimateTotal, exact: false };
+    }
+    return {
+      page: completed + 1 + Math.floor((state.charPos - lastStart) / Math.max(1, avg)),
+      total: estimateTotal,
+      exact: false
+    };
   }
 
   function playFade() {
@@ -468,6 +587,7 @@
     els.text.textContent = state.pageText;
 
     if (options && options.animate) playFade();
+    ensurePageIndex();
     updateChrome();
     if (els.aiPanel && els.aiPanel.classList.contains('fo-on')) updateAiEstimate();
     scheduleSave();
@@ -481,9 +601,15 @@
     els.progressBar.style.width = pct.toFixed(2) + '%';
     els.titleName.textContent = novel ? novel.name : I.t('appName');
     els.titlePage.textContent = total > 0 ? pct.toFixed(1) + '%' : '';
-    els.meta.textContent = novel
-      ? numberText(pos) + ' / ' + numberText(total)
-      : '';
+    if (novel) {
+      const stats = pageStats();
+      els.meta.textContent = I.t('pageMeta', {
+        page: numberText(stats.page),
+        total: numberText(stats.total)
+      });
+    } else {
+      els.meta.textContent = '';
+    }
     els.meta.setAttribute('title', I.t('pageHint'));
     els.body.setAttribute('title', I.t('pageHint'));
   }
